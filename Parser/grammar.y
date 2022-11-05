@@ -322,6 +322,8 @@ int main(int argc, char const *argv[])
 		filename = "(stdin)";
 	}
 	yyparse();
-	
+
+	root->codegen();
+	/* TheModule->print(llvm::outs(), nullptr); */
 	return 0;
 }

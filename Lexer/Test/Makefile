@@ -28,5 +28,5 @@ test : $(EXEC) $(all-tests) $(prog-tests)
 
 
 clean:
-	rm *.yy.c ||:
-	rm *.out ||:
+	rm -f *.yy.c
+	rm -f *.out

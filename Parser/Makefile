@@ -1,18 +1,22 @@
 EXEC = parser.out
 BISON = bison
+LEXER_DIR = ../Lexer
+AST_DIR = ../ast
+CPP = clang++
+CPPFLAGS = -std=c++17
 
 .SILENT: test run ../Lexer/lex.yy.c
 .PHONY: clean build test run
 
-$(EXEC) : grammar.y ../Lexer/lex.yy.c
+$(EXEC) : grammar.y ${LEXER_DIR}
 	bison -d grammar.y
-	g++ grammar.tab.c ../Lexer/lex.yy.c ../ast/ast.cpp -o $(EXEC) 
-
-../Lexer/lex.yy.c: ../Lexer/lexer.l
-	cd ../Lexer && make build && cp lex.yy.c ../Parser
+	${CPP} -o $(EXEC) grammar.tab.c ${LEXER_DIR}/lex.yy.c ${AST_DIR}/ast.cpp ${CPPFLAGS}
 
 build : grammar.y
 	$(BISON) -d grammar.y
+
+${LEXER_DIR} :
+	$(MAKE) -C $@ build
 
 test: ${EXEC}
 	cd Test && ./test.sh

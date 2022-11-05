@@ -13,11 +13,47 @@ Start::Start(std::vector<class Decl *> *DeclList, std::vector<class AssgnStmt *>
     this->GradStmtList = GradStmtList;
 }
 
+llvm::Value *Start::codegen()
+{
+    std::cout << "Start::codegen()" << std::endl;
+
+    llvm::Value *v = nullptr;
+
+    for (auto &decl : *DeclList)
+    {
+        v = decl->codegen();
+    }
+
+    // for (auto &assgn : *AssgnStmtList)
+    // {
+    //     v = assgn->codegen();
+    // }
+
+    // for (auto &grad : *GradStmtList)
+    // {
+    //     v = grad->codegen();
+    // }
+
+    return v;
+}
+
+
 Decl::Decl(GradSpecifier GradType, TypeSpecifier DataType, InitDeclarator *InitDeclaratorList)
 {
     this->GradType = GradType;
     this->DataType = DataType;
     this->InitDeclaratorList = InitDeclaratorList;
+}
+
+llvm::Value *Decl::codegen()
+{
+    std::cout << "Decl::codegen()" << std::endl;
+
+    llvm::Value *v = nullptr;
+
+    v = InitDeclaratorList->codegen();
+
+    return v;
 }
 
 InitDeclarator::InitDeclarator(Declarator *declarator, Initializer *initializer = NULL)
@@ -26,10 +62,31 @@ InitDeclarator::InitDeclarator(Declarator *declarator, Initializer *initializer 
     this->initializer = initializer;
 }
 
+llvm::Value *InitDeclarator::codegen()
+{
+    std::cout << "InitDeclarator::codegen()" << std::endl;
+
+    llvm::Value *v = nullptr;
+
+    v = declarator->codegen();
+
+    if (initializer != NULL)
+    {
+        v = initializer->codegen();
+    }
+
+    return v;
+}
+
 Declarator::Declarator(std::string name)
 {
     this->name = name;
     // this->Dimensions = Dimensions;
+}
+
+llvm::Value *Declarator::codegen()
+{
+    return nullptr;
 }
 
 ConstValue::ConstValue(int value)
@@ -44,6 +101,18 @@ ConstValue::ConstValue(float value)
     this->value.float_val = value;
 }
 
+llvm::Value *ConstValue::codegen()
+{
+    if(this->isInt)
+    {
+        return llvm::ConstantInt::get(TheContext, llvm::APInt(32, this->value.int_val, true));
+    }
+    else
+    {
+        return llvm::ConstantFP::get(TheContext, llvm::APFloat(this->value.float_val));
+    }
+}
+
 Initializer::Initializer(ConstValue *value)
 {
     this->val.cvalue = value;
@@ -54,6 +123,18 @@ Initializer::Initializer(std::vector<Initializer *> *InitializerList)
 {
     this->val.InitializerList = InitializerList;
     this->isScalar = false;
+}
+
+llvm::Value *Initializer::codegen()
+{
+    if(this->isScalar)
+    {
+        return this->val.cvalue->codegen();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 void Initializer::printInitializerList()
@@ -92,6 +173,17 @@ AssgnStmt::AssgnStmt(std::string name, std::optional<AssignmentOperator> op, Exp
     this->expr = expr;
 }
 
+llvm::Value *AssgnStmt::codegen()
+{
+    std::cout << "AssgnStmt::codegen()" << std::endl;
+
+    llvm::Value *v = nullptr;
+
+    v = expr->codegen();
+
+    return v;
+}
+
 Expr::Expr()
 {
 }
@@ -105,6 +197,11 @@ BinaryExpr::BinaryExpr(Expr *lhs, Expr *rhs, char op)
     this->op = op;
 }
 
+llvm::Value *BinaryExpr::codegen()
+{
+    return nullptr;
+}
+
 void BinaryExpr::printExpression()
 {
     std::cout << "(";
@@ -113,6 +210,7 @@ void BinaryExpr::printExpression()
     this->rhs->printExpression();
     std::cout << ")";
 }
+
 
 UnaryExpr::UnaryExpr(Expr *expr, std::optional<LibFuncs> libfunc, std::string identifier, ConstValue *cvalue)
 {
@@ -162,10 +260,25 @@ void UnaryExpr::printExpression()
     }
 }
 
+llvm::Value *UnaryExpr::codegen()
+{
+    return nullptr;
+}
+
+
 GradStmt::GradStmt(GradType grad_type, std::string name)
 {
     this->grad_type = grad_type;
     this->name = name;
+}
+
+llvm::Value *GradStmt::codegen()
+{
+    std::cout << "GradStmt::codegen()" << std::endl;
+
+    llvm::Value *v = nullptr;
+
+    return v;
 }
 
 // int main()

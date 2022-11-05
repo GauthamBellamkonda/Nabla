@@ -7,11 +7,25 @@
 #include <memory>
 #include <optional>
 
+#include <llvm/IR/Value.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/LLVMContext.h>
+
+using namespace llvm;
+
+static LLVMContext TheContext;
+static IRBuilder<> Builder(TheContext);
+static std::unique_ptr<Module> TheModule;
+static std::map<std::string, Value*> NamedValues;
+
 class Parent
 {
 public:
     void func();
     class Parent *child;
+    virtual llvm::Value *codegen() = 0;
 };
 
 class Child : public Parent
@@ -81,6 +95,10 @@ class Node
 public:
     Node();
     virtual ~Node() = default;
+    virtual llvm::Value *codegen() = 0;
+
+
+    // virtual llvm::Value *codegen() = 0;
     // virtual void print() = 0;
     // int row_num, col_num;
     // add codegen() function from llvm for IR gen
@@ -95,6 +113,7 @@ public:
     std::vector<class GradStmt *> *GradStmtList;
     Start(std::vector<class Decl *> *DeclList, std::vector<class AssgnStmt *> *AssgnStmtList, std::vector<class GradStmt *> *GradStmtList);
     virtual ~Start() = default;
+    llvm::Value *codegen() override;
 };
 
 // Decl Class stores the declarations of a variable such as their gradient specifier, data type and the pointer to the initializer
@@ -107,6 +126,7 @@ public:
     InitDeclarator *InitDeclaratorList;
     Decl(GradSpecifier, TypeSpecifier, InitDeclarator *);
     virtual ~Decl() = default;
+    llvm::Value *codegen() override;
 };
 
 // InitDeclarator Class stores the pointer to the declarator and the pointer to the initializer
@@ -117,7 +137,9 @@ public:
     Initializer *initializer;
     InitDeclarator(Declarator *, Initializer *);
     virtual ~InitDeclarator() = default;
+    llvm::Value *codegen() override;
 };
+
 // Declarator Class stores the name of the variable and the dimensions of the variable
 class Declarator : public Node
 {
@@ -126,6 +148,7 @@ public:
     std::vector<int> Dimensions;
     Declarator(std::string);
     virtual ~Declarator() = default;
+    llvm::Value *codegen() override;
 };
 
 class ConstValue : public Node
@@ -142,6 +165,7 @@ public:
     ConstValue(int value);
     ConstValue(float value);
     virtual ~ConstValue() = default;
+    llvm::Value *codegen() override;
 };
 
 // Initializer Class stores the value of the variable using a union structure
@@ -164,7 +188,26 @@ public:
 
     void printInitializerList();
     virtual ~Initializer() = default;
+    llvm::Value *codegen() override;
 };
+
+/* 
+Value* Initializer::codegen()
+{
+    if (isScalar)
+    {
+        return val.cvalue->codegen();
+    }
+    else
+    {
+        std::vector<Value *> values;
+        for (auto &initializer : *val.InitializerList)
+        {
+            values.push_back(initializer->codegen());
+        }
+        return ConstantArray::get(ArrayType::get(Type::getFloatTy(TheContext), values.size()), values);
+    }
+} */
 
 // Operations
 class AssgnStmt : public Node
@@ -178,6 +221,7 @@ public:
     Expr *expr;
     AssgnStmt(std::string, std::optional<AssignmentOperator>, Expr *);
     virtual ~AssgnStmt() = default;
+    llvm::Value *codegen() override;    
 };
 
 class Expr : public Node
@@ -186,6 +230,7 @@ public:
     Expr();
     virtual void printExpression();
     virtual ~Expr() = default;
+    virtual llvm::Value *codegen() = 0;
 };
 
 class BinaryExpr : public Expr
@@ -196,6 +241,7 @@ public:
     BinaryExpr(Expr *lhs, Expr *rhs, char op);
     virtual ~BinaryExpr() = default;
     virtual void printExpression();
+    llvm::Value *codegen() override;
 };
 
 class UnaryExpr : public Expr
@@ -209,6 +255,7 @@ public:
     UnaryExpr(Expr *expr, std::optional<LibFuncs> libfunc, std::string identifier, ConstValue *cvalue);
     virtual ~UnaryExpr() = default;
     virtual void printExpression();
+    llvm::Value *codegen() override;
 };
 
 // Gradient
@@ -222,6 +269,7 @@ public:
     std::string name;
     GradStmt(GradType, std::string);
     virtual ~GradStmt() = default;
+    llvm::Value *codegen() override;
 };
 
 #endif
