@@ -82,14 +82,14 @@ After this we will be able to use the chain rule to calculate the gradients of t
 1. Clone the repository
 
 ```bash
-git clone https://github.com/IITH-COMPILERS2/compilers-2-project-team-9-aug22.git
+git clone https://github.com/GauthamBellamkonda/Nabla.git
 
 ```
 
 2. Run the makefile
 
 ```bash
-cd compilers-2-project-team-9-aug22
+cd Nabla
 make
 ```
 <!-- optional -->
